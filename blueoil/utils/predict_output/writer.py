@@ -2,6 +2,7 @@ import logging
 import os
 
 import numpy as np
+from tensorflow import gfile
 
 from blueoil.utils.predict_output.output import ImageFromJson
 from blueoil.utils.predict_output.output import JsonOutput
@@ -9,7 +10,7 @@ from blueoil.utils.predict_output.output import JsonOutput
 logger = logging.getLogger(__name__)
 
 
-class OutputWriter():
+class OutputWriter:
     def __init__(self, task, classes, image_size, data_format):
         self.json_output = JsonOutput(task, classes, image_size, data_format)
         self.image_from_json = ImageFromJson(task, classes, image_size)
@@ -52,7 +53,7 @@ def save_npy(dest, outputs, step):
         raise ValueError("step must be integer.")
 
     filepath = os.path.join(dest, "npy", "{}.npy".format(step))
-    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    gfile.makedirs(os.path.dirname(filepath), exist_ok=True)
 
     np.save(filepath, outputs)
 
@@ -75,9 +76,9 @@ def save_json(dest, json, step):
         raise ValueError("step must be integer.")
 
     filepath = os.path.join(dest, "json", "{}.json".format(step))
-    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    gfile.makedirs(os.path.dirname(filepath), exist_ok=True)
 
-    with open(filepath, "w") as f:
+    with gfile.Gfile(filepath, "w") as f:
         f.write(json)
 
     logger.info("save json: {}".format(filepath))
@@ -100,7 +101,7 @@ def save_materials(dest, materials, step):
 
     for filename, content in materials:
         filepath = os.path.join(dest, "images", "{}".format(step), filename)
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        gfile.makedirs(os.path.dirname(filepath), exist_ok=True)
 
         content.save(filepath)
 

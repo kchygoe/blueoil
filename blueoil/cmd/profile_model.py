@@ -34,8 +34,8 @@ def _profile(config, restore_path, bit, unquant_layers):
     if restore_path:
         output_root_dir = os.path.join(output_root_dir, os.path.basename(restore_path))
 
-    if not os.path.exists(output_root_dir):
-        os.makedirs(output_root_dir)
+    if not tf.gfile.path.exists(output_root_dir):
+        tf.gfile.makedirs(output_root_dir)
 
     graph = tf.Graph()
     ModelClass = config.NETWORK_CLASS
@@ -67,7 +67,7 @@ def _profile(config, restore_path, bit, unquant_layers):
 
     main_output_dir = os.path.join(output_root_dir, "{}x{}".format(config.IMAGE_SIZE[0], config.IMAGE_SIZE[1]))
     if not os.path.exists(main_output_dir):
-        os.makedirs(main_output_dir)
+        tf.gfile.makedirs(main_output_dir)
 
     inference_graph_def = executor.convert_variables_to_constants(sess)
 
@@ -101,7 +101,7 @@ def _render(name, image_size, num_classes, bit, res):
         os.path.dirname(os.path.realpath(__file__)),
         "fixtures", "profile_template.md")
 
-    with open(template_file_path, "r") as f:
+    with tf.gfile.Gfile(template_file_path, "r") as f:
         file_data = f.read()
     file_data = file_data.replace("{name}", name)\
                          .replace("{image_size_h}", str(image_size[0]))\
@@ -122,7 +122,7 @@ def _render(name, image_size, num_classes, bit, res):
     file_data = file_data.replace("{table}", table_rows)
 
     output_file = os.path.join(environment.EXPERIMENT_DIR, "{}_profile.md".format(name))
-    with open(output_file, "w") as f:
+    with tf.gfile.Gfile(output_file, "w") as f:
         f.write(file_data)
     logger.info("Model's profile has been saved into {}".format(output_file))
 
@@ -138,7 +138,7 @@ def _save_json(name, image_size, num_classes, node_param_dict, node_flops_dict):
     }
 
     output_file = os.path.join(environment.EXPERIMENT_DIR, "{}_profile.json".format(name))
-    with open(output_file, "w") as f:
+    with tf.gfile.Gfile(output_file, "w") as f:
         f.write(json.dumps(prof_dict, indent=4))
 
     logger.info("save json: {}".format(output_file))
