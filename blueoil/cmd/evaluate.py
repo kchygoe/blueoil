@@ -55,11 +55,13 @@ def evaluate(config, restore_path, output_dir):
         restore_file = executor.search_restore_filename(environment.CHECKPOINTS_DIR)
         restore_path = os.path.join(environment.CHECKPOINTS_DIR, restore_file)
 
-    if not os.path.exists("{}.index".format(restore_path)):
+    if not tf.gfile.exists("{}.index".format(restore_path)):
         raise Exception("restore file {} dont exists.".format(restore_path))
 
     if output_dir is None:
-        output_dir = os.path.join(os.path.dirname(os.path.dirname(restore_path)), "evaluate")
+        output_dir = os.path.join(
+            os.path.dirname(os.path.dirname(restore_path)), "evaluate"
+        )
 
     logger.info(f"restore_path:{restore_path}")
 
@@ -113,14 +115,18 @@ def evaluate(config, restore_path, output_dir):
     sess = tf.compat.v1.Session(graph=graph, config=session_config)
     sess.run([init_op, reset_metrics_op])
 
-    validation_writer = tf.compat.v1.summary.FileWriter(environment.TENSORBOARD_DIR + "/evaluate")
+    validation_writer = tf.compat.v1.summary.FileWriter(
+        environment.TENSORBOARD_DIR + "/evaluate"
+    )
 
     saver.restore(sess, restore_path)
 
     last_step = sess.run(global_step)
 
     # init metrics values
-    test_step_size = int(math.ceil(validation_dataset.num_per_epoch / config.BATCH_SIZE))
+    test_step_size = int(
+        math.ceil(validation_dataset.num_per_epoch / config.BATCH_SIZE)
+    )
     logger.info(f"test_step_size{test_step_size}")
 
     for test_step in range(test_step_size):
@@ -143,51 +149,46 @@ def evaluate(config, restore_path, output_dir):
     validation_writer.add_summary(metrics_summary, last_step)
 
     is_tfds = "TFDS_KWARGS" in config.DATASET
-    dataset_name = config.DATASET.TFDS_KWARGS["name"] if is_tfds else config.DATASET_CLASS.__name__
+    dataset_name = (
+        config.DATASET.TFDS_KWARGS["name"] if is_tfds else config.DATASET_CLASS.__name__
+    )
     dataset_path = config.DATASET.TFDS_KWARGS["data_dir"] if is_tfds else ""
 
     metrics_dict = {
-        'task_type': config.TASK.value,
-        'network_name': config.NETWORK_CLASS.__name__,
-        'dataset_name': dataset_name,
-        'dataset_path': dataset_path,
-        'last_step': int(last_step),
-        'metrics': {k: float(sess.run(op)) for k, op in metrics_ops_dict.items()},
+        "task_type": config.TASK.value,
+        "network_name": config.NETWORK_CLASS.__name__,
+        "dataset_name": dataset_name,
+        "dataset_path": dataset_path,
+        "last_step": int(last_step),
+        "metrics": {k: float(sess.run(op)) for k, op in metrics_ops_dict.items()},
     }
-    save_json(output_dir, json.dumps(metrics_dict, indent=4,), metrics_dict["last_step"])
+    save_json(
+        output_dir, json.dumps(metrics_dict, indent=4,), metrics_dict["last_step"]
+    )
     validation_dataset.close()
 
 
 @click.command(context_settings=dict(help_option_names=["-h", "--help"]))
 @click.option(
-    "-i",
-    "--experiment_id",
-    help="id of this experiment",
-    required=True,
+    "-i", "--experiment_id", help="id of this experiment", required=True,
 )
 @click.option(
     "--restore_path",
     help="restore ckpt file base path. e.g. saved/experiment/checkpoints/save.ckpt-10001",
 )
 @click.option(
-    "-n",
-    "--network",
-    help="network name. override config.NETWORK_CLASS",
+    "-n", "--network", help="network name. override config.NETWORK_CLASS",
 )
 @click.option(
-    "-d",
-    "--dataset",
-    help="dataset name. override config.DATASET_CLASS",
+    "-d", "--dataset", help="dataset name. override config.DATASET_CLASS",
 )
 @click.option(
     "-c",
     "--config_file",
-    help="config file path. override(merge) saved experiment config. if it is not provided, it restore from saved experiment config.", # NOQA
+    help="config file path. override(merge) saved experiment config. if it is not provided, it restore from saved experiment config.",  # NOQA
 )
 @click.option(
-    "-o",
-    "--output_dir",
-    help="Output directory to save a evaluated result",
+    "-o", "--output_dir", help="Output directory to save a evaluated result",
 )
 def main(network, dataset, config_file, experiment_id, restore_path, output_dir):
     environment.init(experiment_id)
